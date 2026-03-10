@@ -49,32 +49,3 @@ php artisan key:generate
 php artisan migrate --seed
 php artisan storage:link
 php artisan serve
-```
-
-## Catatan Geolocation
-Geolocation browser hanya berjalan pada:
-- `localhost`
-- HTTPS production
-
-## Troubleshooting Login 419
-Jika muncul `419 Page Expired` saat login di Laragon:
-1. Pastikan `.env` menggunakan `SESSION_DRIVER=file`.
-2. Jalankan:
-   - `php artisan optimize:clear`
-3. Hapus cookie domain `simelati.test` di browser, lalu refresh halaman login.
-
-## Struktur
-- `app/Domain/Attendance`
-- `app/Domain/ClassAttendance`
-- `app/Domain/Permissions`
-- `app/Domain/MasterData`
-- `app/Domain/Reporting`
-- `app/Http/Controllers/Admin`
-- `app/Http/Controllers/Teacher`
-- `app/Http/Controllers/ParentPortal`
-
-## Route Ringkas
-- Teacher: `/dashboard`, `/attendance/history`, `/class-attendance`, `/teaching-journals`, `/teaching-journals/history`
-- Parent: `/parent/dashboard`, `/parent/permissions`, `/parent/permissions/create`
-- Admin: `/admin/dashboard`, `/admin/settings`, `/admin/permissions`, `/admin/reports/*`
-
