@@ -14,7 +14,7 @@ class PermissionService
 
         return StudentPermission::query()
             ->where('student_id', $student->id)
-            ->where('status', 'approved')
+            ->whereIn('status', ['submitted', 'approved'])
             ->whereDate('date_from', '<=', $targetDate)
             ->whereDate('date_to', '>=', $targetDate)
             ->latest('id')

@@ -5,6 +5,7 @@ namespace App\Domain\Permissions;
 use App\Models\Setting;
 use App\Models\Student;
 use App\Models\StudentPermission;
+use App\Support\SafeFileUpload;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use InvalidArgumentException;
@@ -24,7 +25,7 @@ class PublicStudentPermissionService
 
         $setting = Setting::active();
         $status = $setting->izin_requires_approval ? 'submitted' : 'approved';
-        $path = $attachment?->store('student-permissions', 'public');
+        $path = SafeFileUpload::storePublic($attachment, 'student-permissions');
 
         return StudentPermission::query()->create([
             'student_id' => $student->id,

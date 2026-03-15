@@ -42,8 +42,8 @@
             </div>
             <div class="col-12">
                 <label class="form-label">Lampiran / Foto / Dokumen Pendukung</label>
-                <input type="file" class="form-control" name="attachment" accept="image/*,application/pdf" capture="environment">
-                <small class="text-secondary">Bisa foto langsung dari HP atau upload dari galeri/dokumen. Opsional.</small>
+                <input type="file" class="form-control" name="attachment" accept=".png,.jpg,.jpeg,application/pdf" capture="environment">
+                <small class="text-secondary">Bisa foto langsung dari HP atau upload dari galeri/dokumen. Maks 10MB. Opsional.</small>
                 @if($journal?->attachment_path)
                     <div class="mt-2">
                         @if(preg_match('/\.(jpg|jpeg|png|webp)$/i', $journal->attachment_path))
@@ -64,3 +64,5 @@
         </form>
     </x-panel>
 </x-layouts.app>
+
+

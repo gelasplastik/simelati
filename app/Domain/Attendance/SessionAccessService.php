@@ -2,6 +2,7 @@
 
 namespace App\Domain\Attendance;
 
+use App\Domain\MasterData\AcademicCalendarService;
 use App\Models\Attendance;
 use App\Models\ClassAttendanceSession;
 use App\Models\Setting;
@@ -11,11 +12,22 @@ use InvalidArgumentException;
 
 class SessionAccessService
 {
+    public function __construct(
+        private readonly AcademicCalendarService $calendarService,
+    ) {
+    }
+
     public function ensureTeacherCheckedInToday(Teacher $teacher): void
     {
+        $today = now()->toDateString();
+
+        if (! $this->calendarService->isTeacherAttendanceEnabled($today)) {
+            return;
+        }
+
         $checkedIn = Attendance::query()
             ->where('teacher_id', $teacher->id)
-            ->whereDate('date', now()->toDateString())
+            ->whereDate('date', $today)
             ->exists();
 
         if (! $checkedIn) {
@@ -23,8 +35,24 @@ class SessionAccessService
         }
     }
 
+    public function ensureStudentAttendanceEnabledForDate(string $date): void
+    {
+        if (! $this->calendarService->isStudentAttendanceEnabled($date)) {
+            throw new InvalidArgumentException('Absensi siswa dinonaktifkan pada tanggal ini berdasarkan Kalender Akademik.');
+        }
+    }
+
+    public function ensureJournalEnabledForDate(string $date): void
+    {
+        if (! $this->calendarService->isJournalEnabled($date)) {
+            throw new InvalidArgumentException('Jurnal mengajar dinonaktifkan pada tanggal ini berdasarkan Kalender Akademik.');
+        }
+    }
+
     public function ensureClassAttendanceDateAllowed(string $date, ?ClassAttendanceSession $session = null): void
     {
+        $this->ensureStudentAttendanceEnabledForDate($date);
+
         $target = Carbon::parse($date)->toDateString();
 
         if ($target === now()->toDateString()) {
@@ -40,12 +68,13 @@ class SessionAccessService
 
     public function ensureJournalAccessAllowed(ClassAttendanceSession $session): void
     {
+        $date = $session->date->toDateString();
+        $this->ensureJournalEnabledForDate($date);
+
         $setting = Setting::active();
         if (! $setting->journal_lock_enabled) {
             return;
         }
-
-        $date = $session->date->toDateString();
 
         if ($date === now()->toDateString()) {
             return;

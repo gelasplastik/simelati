@@ -52,8 +52,8 @@
             </div>
             <div class="col-12">
                 <label class="form-label">Lampiran / Foto Pendukung</label>
-                <input type="file" class="form-control" name="attachment" accept="image/*,application/pdf" capture="environment">
-                <small class="text-secondary">Bisa foto langsung dari HP atau upload dari galeri/dokumen. Lampiran opsional.</small>
+                <input type="file" class="form-control" name="attachment" accept=".png,.jpg,.jpeg,application/pdf" capture="environment">
+                <small class="text-secondary">Bisa foto langsung dari HP atau upload dari galeri/dokumen. Maks 10MB. Lampiran opsional.</small>
             </div>
             <div class="col-12">
                 <button class="btn btn-primary btn-action-lg w-100" type="submit">Kirim Pengajuan Izin</button>
@@ -61,3 +61,5 @@
         </form>
     @endif
 </x-layouts.guest>
+
+

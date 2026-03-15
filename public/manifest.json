@@ -1,13 +1,18 @@
 {
+  "id": "/?source=pwa",
   "name": "SIMELATI",
   "short_name": "SIMELATI",
   "description": "Sistem Informasi Manajemen SD Plus Melati",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#F5F7FA",
-  "theme_color": "#2E7D32",
+  "theme_color": "#0F8EA8",
+  "categories": ["education", "productivity"],
+  "lang": "id-ID",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/assets/pwa/icon-192.png",
@@ -26,6 +31,44 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "/?source=pwa-dashboard",
+      "icons": [
+        {
+          "src": "/assets/pwa/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Absensi Kelas",
+      "short_name": "Absensi",
+      "url": "/class-attendance?source=pwa",
+      "icons": [
+        {
+          "src": "/assets/pwa/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Jurnal Mengajar",
+      "short_name": "Jurnal",
+      "url": "/teacher/journals?source=pwa",
+      "icons": [
+        {
+          "src": "/assets/pwa/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

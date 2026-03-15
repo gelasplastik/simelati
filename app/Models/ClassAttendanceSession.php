@@ -14,6 +14,8 @@ class ClassAttendanceSession extends Model
 
     protected $fillable = [
         'teacher_id',
+        'original_teacher_id',
+        'executing_teacher_id',
         'class_id',
         'subject_id',
         'teaching_schedule_id',
@@ -34,6 +36,16 @@ class ClassAttendanceSession extends Model
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(Teacher::class);
+    }
+
+    public function originalTeacher(): BelongsTo
+    {
+        return $this->belongsTo(Teacher::class, 'original_teacher_id');
+    }
+
+    public function executingTeacher(): BelongsTo
+    {
+        return $this->belongsTo(Teacher::class, 'executing_teacher_id');
     }
 
     public function class(): BelongsTo

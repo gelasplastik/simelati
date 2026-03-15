@@ -18,7 +18,8 @@ class TeachingJournalUpdateRequest extends FormRequest
             'materi' => ['required', 'string'],
             'student_notes' => ['nullable', 'string'],
             'mastery_notes' => ['nullable', 'string'],
-            'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
         ];
     }
 }
+

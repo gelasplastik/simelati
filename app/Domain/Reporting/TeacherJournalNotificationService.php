@@ -2,6 +2,7 @@
 
 namespace App\Domain\Reporting;
 
+use App\Domain\MasterData\AcademicCalendarService;
 use App\Domain\MasterData\TeachingScheduleService;
 use App\Models\Attendance;
 use App\Models\Teacher;
@@ -10,16 +11,39 @@ class TeacherJournalNotificationService
 {
     public function __construct(
         private readonly TeachingScheduleService $scheduleService,
+        private readonly AcademicCalendarService $calendarService,
     ) {
     }
 
     public function buildToday(Teacher $teacher): array
     {
+        $today = now()->toDateString();
+
         $items = $this->scheduleService->getTodaySchedules($teacher);
         $checkedInToday = Attendance::query()
             ->where('teacher_id', $teacher->id)
-            ->whereDate('date', now()->toDateString())
+            ->whereDate('date', $today)
             ->exists();
+
+        if (! $this->calendarService->isTeacherAttendanceEnabled($today)) {
+            $checkedInToday = true;
+        }
+
+        if (! $this->calendarService->isStudentAttendanceEnabled($today) || ! $this->calendarService->isJournalEnabled($today)) {
+            return [
+                'checked_in_today' => $checkedInToday,
+                'total_schedules' => $items->count(),
+                'attendance_pending_count' => 0,
+                'journal_pending_count' => 0,
+                'complete_count' => 0,
+                'items' => $items,
+                'incomplete_items' => collect(),
+                'bell_variant' => 'secondary',
+                'has_incomplete' => false,
+                'no_schedule' => $items->isEmpty(),
+                'dropdown_message' => 'Kewajiban absensi/jurnal dinonaktifkan hari ini berdasarkan Kalender Akademik.',
+            ];
+        }
 
         $needsAttendance = $items->filter(fn ($item) => ! $item['attendance_done']);
         $needsJournal = $items->filter(fn ($item) => $item['attendance_done'] && ! $item['journal_done']);

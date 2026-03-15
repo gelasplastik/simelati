@@ -189,7 +189,7 @@ class ReportController extends Controller
 
         return response()->streamDownload(function () use ($rows) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Nama Guru', 'Hari Hadir', 'Hari Kerja', 'Jurnal', 'Tepat Waktu', 'Skor Kehadiran', 'Skor Jurnal', 'Skor Ketepatan', 'Total']);
+            fputcsv($handle, ['Nama Guru', 'Hari Hadir', 'Hari Kerja', 'Jurnal', 'Tepat Waktu', 'Skor Kehadiran', 'Skor Jurnal', 'Skor Ketepatan', 'Modul Disubmit/Approved', 'Modul Completion %', 'Total']);
             foreach ($rows as $row) {
                 fputcsv($handle, [
                     $row['teacher']->user->name,
@@ -207,3 +207,4 @@ class ReportController extends Controller
         }, $filename, ['Content-Type' => 'text/csv']);
     }
 }
+

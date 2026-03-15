@@ -1,5 +1,11 @@
 <x-layouts.app :title="'Dashboard Analitik - SIMELATI'" :pageTitle="'Dashboard Analitik Sekolah'" :breadcrumb="'Admin / Dashboard Analitik'">
-    <x-panel class="mb-3">
+    <div class="dashboard-shell">
+        <div class="dashboard-hero">
+            <div class="title">Pusat Monitoring Harian Sekolah</div>
+            <div class="small text-secondary">Pantau kehadiran guru/siswa, jurnal, dan permintaan penting dari satu dashboard.</div>
+        </div>
+
+        <x-panel class="mb-3">
         <form method="GET" class="row g-2 align-items-end">
             <div class="col-md-3 col-sm-6">
                 <label class="form-label">Periode Grafik</label>
@@ -22,6 +28,42 @@
         <div class="col-lg-2 col-md-4 col-6"><x-stat-card label="Siswa Tidak Hadir" :value="$analytics['summary']['student_absent_today']" icon="bi-emoji-frown" variant="danger" /></div>
         <div class="col-lg-2 col-md-4 col-6"><x-stat-card label="Jurnal Belum Diisi" :value="$analytics['summary']['journal_missing_today']" icon="bi-journal-x" variant="info" /></div>
         <div class="col-lg-2 col-md-4 col-6"><x-stat-card label="Permintaan Pending" :value="$analytics['summary']['pending_requests']" icon="bi-hourglass-split" variant="warning" /></div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <x-panel title="Kalender Bulanan Akademik">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div class="fw-semibold">{{ $calendarWidget['month_label'] }}</div>
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.dashboard', ['period' => $period, 'calendar_year' => $calendarWidget['prev']['year'], 'calendar_month' => $calendarWidget['prev']['month']]) }}"><i class="bi bi-chevron-left"></i></a>
+                        <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.dashboard', ['period' => $period, 'calendar_year' => $calendarWidget['next']['year'], 'calendar_month' => $calendarWidget['next']['month']]) }}"><i class="bi bi-chevron-right"></i></a>
+                    </div>
+                </div>
+                <div class="month-calendar-grid">
+                    @foreach($calendarWidget['weekdays'] as $weekday)
+                        <div class="month-calendar-weekday">{{ $weekday }}</div>
+                    @endforeach
+                    @foreach($calendarWidget['weeks'] as $week)
+                        @foreach($week as $cell)
+                            <div class="month-calendar-cell {{ ! $cell['is_current_month'] ? 'is-muted' : '' }} {{ $cell['is_today'] ? 'is-today' : '' }}">
+                                <div class="month-calendar-date">{{ $cell['date']->day }}</div>
+                                <div class="month-calendar-events">
+                                    @forelse($cell['events']->take(3) as $event)
+                                        <div class="month-event-chip" style="--event-color: {{ $event['color'] }};" title="{{ $event['title'] }}">{{ $event['label'] }}: {{ $event['title'] }}</div>
+                                    @empty
+                                        <div class="month-event-empty">-</div>
+                                    @endforelse
+                                    @if($cell['events']->count() > 3)
+                                        <div class="month-event-more">+{{ $cell['events']->count() - 3 }} event</div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    @endforeach
+                </div>
+            </x-panel>
+        </div>
     </div>
 
     <div class="row g-3 mb-3">
@@ -271,4 +313,6 @@
             });
         }
     </script>
+    </div>
 </x-layouts.app>
+

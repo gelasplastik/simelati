@@ -1,35 +1,37 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'SIMELATI' }}</title>
-    <link rel="icon" type="image/png" href="{{ asset('assets/logo/simelati-logo.png') }}">
-    <link rel="manifest" href="{{ asset('manifest.json') }}">
-    <meta name="theme-color" content="#2E7D32">
+    <link rel="icon" type="image/png" href="/assets/logo/simelati-logo.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0F8EA8">
+    <meta name="application-name" content="SIMELATI">
+    <meta name="format-detection" content="telephone=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="SIMELATI">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" sizes="192x192" href="{{ asset('assets/pwa/icon-192.png') }}">
+    <link rel="apple-touch-icon" sizes="192x192" href="/assets/pwa/icon-192.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
 @php($user = auth()->user())
-<div class="d-flex content-wrapper">
-    <aside class="sidebar d-none d-lg-block p-3 position-fixed top-0 start-0">
+<div class="workspace-shell">
+    <aside class="sidebar d-none d-lg-block">
         @include('partials.sidebar')
     </aside>
 
-    <div class="main-content flex-grow-1">
+    <div class="workspace-content">
         @include('partials.topbar')
 
-        <div class="container-fluid p-3 p-lg-4">
+        <div class="container-fluid p-3 p-lg-4 workspace-container">
             <div class="mb-3 page-head">
                 <div>
                     <h4 class="mb-1">{{ $pageTitle ?? 'Dashboard' }}</h4>
-                    <small class="text-secondary">{{ $breadcrumb ?? 'SIMELATI' }}</small>
+                    <small>{{ $breadcrumb ?? 'SIMELATI' }}</small>
                 </div>
                 <div class="d-flex align-items-center gap-2 small text-secondary">
                     <i class="bi bi-building"></i>
@@ -39,6 +41,7 @@
 
             @include('partials.flash')
             @include('partials.errors')
+            @include('partials.calendar_notice')
 
             {{ $slot }}
         </div>
@@ -69,7 +72,7 @@
         @elseif($user->role === 'teacher')
             <a href="{{ route('teacher.dashboard') }}" class="{{ request()->routeIs('teacher.dashboard') ? 'active' : '' }}"><i class="bi bi-house"></i>Dashboard</a>
             <a href="{{ route('teacher.class-attendance.index') }}" class="{{ request()->routeIs('teacher.class-attendance.*') ? 'active' : '' }}"><i class="bi bi-clipboard-check"></i>Absensi</a>
-            <a href="{{ route('teacher.teaching-journals.index') }}" class="{{ request()->routeIs('teacher.teaching-journals.*') ? 'active' : '' }}"><i class="bi bi-journal-text"></i>Jurnal</a>
+            <a href="{{ route('teacher.journals.index') }}" class="{{ request()->routeIs('teacher.journals.*') ? 'active' : '' }}"><i class="bi bi-journal-text"></i>Jurnal</a>
         @else
             <a href="{{ route('parent.dashboard') }}" class="{{ request()->routeIs('parent.dashboard') ? 'active' : '' }}"><i class="bi bi-house"></i>Dashboard</a>
             <a href="{{ route('parent.permissions.index') }}" class="{{ request()->routeIs('parent.permissions.index') ? 'active' : '' }}"><i class="bi bi-clock-history"></i>Riwayat</a>
@@ -78,12 +81,21 @@
     </nav>
 @endif
 
-<div id="pwaInstallPrompt" class="pwa-install shadow-sm" hidden>
+<div id="pwaInstallPrompt" class="pwa-install" hidden>
     <div class="small">Install SIMELATI di perangkat Anda untuk akses lebih cepat.</div>
     <div class="d-flex gap-2 mt-2">
         <button type="button" class="btn btn-success btn-sm" id="pwaInstallBtn">Install</button>
         <button type="button" class="btn btn-outline-secondary btn-sm" id="pwaInstallDismiss">Nanti</button>
     </div>
 </div>
+
+<div id="pwaUpdatePrompt" class="pwa-update" hidden>
+    <div class="small">Versi baru SIMELATI tersedia.</div>
+    <div class="d-flex gap-2 mt-2">
+        <button type="button" class="btn btn-primary btn-sm" id="pwaUpdateBtn">Perbarui</button>
+    </div>
+</div>
 </body>
 </html>
+
+

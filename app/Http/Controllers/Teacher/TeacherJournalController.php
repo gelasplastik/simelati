@@ -9,6 +9,7 @@ use App\Http\Requests\Teacher\TeacherScheduleJournalStoreRequest;
 use App\Models\ClassAttendanceSession;
 use App\Models\TeachingJournal;
 use App\Models\TeachingSchedule;
+use App\Support\SafeFileUpload;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
@@ -30,6 +31,7 @@ class TeacherJournalController extends Controller
 
         try {
             $this->accessService->ensureTeacherCheckedInToday($teacher);
+            $this->accessService->ensureJournalEnabledForDate($today);
         } catch (InvalidArgumentException $exception) {
             return redirect()->route('teacher.dashboard')->with('error', $exception->getMessage());
         }
@@ -71,6 +73,7 @@ class TeacherJournalController extends Controller
 
         try {
             $this->accessService->ensureTeacherCheckedInToday($teacher);
+            $this->accessService->ensureJournalEnabledForDate($today);
         } catch (InvalidArgumentException $exception) {
             return redirect()->route('teacher.dashboard')->with('error', $exception->getMessage());
         }
@@ -90,6 +93,16 @@ class TeacherJournalController extends Controller
 
         if (! $session->teaching_schedule_id) {
             $session->update(['teaching_schedule_id' => $schedule->id]);
+        }
+
+        if ($session->attendances()->count() === 0) {
+            return redirect()->route('teacher.class-attendance.index', [
+                'teaching_schedule_id' => $schedule->id,
+                'date' => $today,
+                'class_id' => $schedule->class_id,
+                'subject_id' => $schedule->subject_id,
+                'jam_ke' => $schedule->jam_ke,
+            ])->with('error', 'Silakan isi absensi kelas terlebih dahulu sebelum mengisi jurnal.');
         }
 
         $session->loadMissing(['class', 'subject', 'attendances.student', 'teachingJournal']);
@@ -118,64 +131,73 @@ class TeacherJournalController extends Controller
 
         try {
             $this->accessService->ensureTeacherCheckedInToday($teacher);
+            $this->accessService->ensureJournalEnabledForDate($today);
         } catch (InvalidArgumentException $exception) {
             return redirect()->route('teacher.dashboard')->with('error', $exception->getMessage());
         }
 
         $payload = $request->validated();
 
-        DB::transaction(function () use ($teacher, $today, $schedule, $payload, $request) {
-            $session = ClassAttendanceSession::query()->firstOrCreate(
-                [
+        try {
+            DB::transaction(function () use ($teacher, $today, $schedule, $payload, $request) {
+                $session = ClassAttendanceSession::query()->firstOrCreate(
+                    [
+                        'teacher_id' => $teacher->id,
+                        'class_id' => $schedule->class_id,
+                        'subject_id' => $schedule->subject_id,
+                        'date' => $today,
+                        'jam_ke' => $schedule->jam_ke,
+                    ],
+                    [
+                        'teaching_schedule_id' => $schedule->id,
+                    ]
+                );
+
+                if (! $session->teaching_schedule_id) {
+                    $session->update(['teaching_schedule_id' => $schedule->id]);
+                }
+
+                if ($session->attendances()->count() === 0) {
+                    throw new InvalidArgumentException('Silakan isi absensi kelas terlebih dahulu sebelum mengisi jurnal.');
+                }
+
+                $absentText = $session->attendances()
+                    ->where('status', '!=', 'hadir')
+                    ->with('student')
+                    ->get()
+                    ->pluck('student.full_name')
+                    ->filter()
+                    ->implode(', ');
+
+                $journal = TeachingJournal::query()->firstOrNew([
+                    'class_attendance_session_id' => $session->id,
+                ]);
+
+                $attachmentPath = $journal->attachment_path;
+                if ($request->hasFile('attachment')) {
+                    $newPath = SafeFileUpload::storePublic($request->file('attachment'), 'teaching-journals');
+                    if ($attachmentPath) {
+                        Storage::disk('public')->delete($attachmentPath);
+                    }
+                    $attachmentPath = $newPath;
+                }
+
+                $journal->fill([
                     'teacher_id' => $teacher->id,
+                    'date' => $today,
                     'class_id' => $schedule->class_id,
                     'subject_id' => $schedule->subject_id,
-                    'date' => $today,
                     'jam_ke' => $schedule->jam_ke,
-                ],
-                [
-                    'teaching_schedule_id' => $schedule->id,
-                ]
-            );
-
-            if (! $session->teaching_schedule_id) {
-                $session->update(['teaching_schedule_id' => $schedule->id]);
-            }
-
-            $absentText = $session->attendances()
-                ->where('status', '!=', 'hadir')
-                ->with('student')
-                ->get()
-                ->pluck('student.full_name')
-                ->filter()
-                ->implode(', ');
-
-            $journal = TeachingJournal::query()->firstOrNew([
-                'class_attendance_session_id' => $session->id,
-            ]);
-
-            $attachmentPath = $journal->attachment_path;
-            if ($request->hasFile('attachment')) {
-                $newPath = $request->file('attachment')->store('teaching-journals', 'public');
-                if ($attachmentPath) {
-                    Storage::disk('public')->delete($attachmentPath);
-                }
-                $attachmentPath = $newPath;
-            }
-
-            $journal->fill([
-                'teacher_id' => $teacher->id,
-                'date' => $today,
-                'class_id' => $schedule->class_id,
-                'subject_id' => $schedule->subject_id,
-                'jam_ke' => $schedule->jam_ke,
-                'materi' => $payload['materi'],
-                'student_notes' => $payload['student_notes'] ?? null,
-                'absent_students_text' => $absentText,
-                'attachment_path' => $attachmentPath,
-            ]);
-            $journal->save();
-        });
+                    'materi' => $payload['materi'],
+                    'student_notes' => $payload['student_notes'] ?? null,
+                    'absent_students_text' => $absentText,
+                    'attachment_path' => $attachmentPath,
+                ]);
+                $journal->save();
+            });
+        } catch (InvalidArgumentException $exception) {
+            return back()->with('error', $exception->getMessage())->withInput();
+        }
 
         return redirect()->route('teacher.journals.index')->with('success', 'Jurnal berhasil disimpan.');
     }
@@ -202,4 +224,3 @@ class TeacherJournalController extends Controller
         };
     }
 }
-

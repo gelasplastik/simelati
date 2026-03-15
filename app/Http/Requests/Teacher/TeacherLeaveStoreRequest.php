@@ -17,7 +17,11 @@ class TeacherLeaveStoreRequest extends FormRequest
             'date_from' => ['required', 'date'],
             'date_to' => ['required', 'date', 'after_or_equal:date_from'],
             'reason' => ['required', 'string'],
-            'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'affects_teaching_schedule' => ['nullable', 'boolean'],
+            'proposed_substitute_teacher_id' => ['nullable', 'exists:teachers,id'],
+            'coverage_notes' => ['nullable', 'string'],
+            'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
         ];
     }
 }
+

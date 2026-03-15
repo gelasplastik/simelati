@@ -1,4 +1,4 @@
-<x-layouts.app :title="'Ajukan Izin Pengisian Susulan'" :pageTitle="'Permintaan Izin Pengisian Susulan'" :breadcrumb="'Teacher / Permintaan Izin / Create'">
+<x-layouts.app :title="'Ajukan Permintaan Absensi/Jurnal Susulan'" :pageTitle="'Permintaan Absensi/Jurnal Susulan'" :breadcrumb="'Teacher / Permintaan Absensi/Jurnal / Create'">
     <x-panel>
         <form method="POST" action="{{ route('teacher.late-entry-requests.store') }}" class="row g-3">
             @csrf
@@ -28,3 +28,4 @@
         </form>
     </x-panel>
 </x-layouts.app>
+

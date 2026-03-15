@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ParentPortal\StorePermissionRequest;
 use App\Models\Setting;
 use App\Models\StudentPermission;
+use App\Support\SafeFileUpload;
+use InvalidArgumentException;
 
 class PermissionController extends Controller
 {
@@ -32,7 +34,12 @@ class PermissionController extends Controller
 
         $setting = Setting::active();
         $status = $setting->izin_requires_approval ? 'submitted' : 'approved';
-        $path = $request->hasFile('attachment') ? $request->file('attachment')->store('student-permissions', 'public') : null;
+
+        try {
+            $path = SafeFileUpload::storePublic($request->file('attachment'), 'student-permissions');
+        } catch (InvalidArgumentException $exception) {
+            return back()->with('error', $exception->getMessage())->withInput();
+        }
 
         StudentPermission::query()->create([
             'student_id' => $request->student_id,

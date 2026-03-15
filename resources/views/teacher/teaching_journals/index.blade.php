@@ -1,7 +1,7 @@
 <x-layouts.app :title="'Jurnal Mengajar'" :pageTitle="'Jurnal Mengajar'" :breadcrumb="'Teacher / Jurnal Mengajar'">
     <x-panel>
         <table class="table table-sm align-middle">
-            <thead><tr><th>Tanggal</th><th>Kelas</th><th>Mapel</th><th>Jam Ke</th><th>Status Jurnal</th><th>Lampiran</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>Tanggal</th><th>Kelas</th><th>Mapel</th><th>Jam Ke</th><th>Guru Asli</th><th>Pelaksana</th><th>Status Jurnal</th><th>Lampiran</th><th>Aksi</th></tr></thead>
             <tbody>
             @forelse($sessions as $session)
                 <tr>
@@ -9,6 +9,8 @@
                     <td>{{ $session->class->name }}</td>
                     <td>{{ $session->subject->name }}</td>
                     <td>{{ $session->jam_ke }}</td>
+                    <td>{{ $session->originalTeacher?->user?->name ?? $session->teacher->user->name }}</td>
+                    <td>{{ $session->executingTeacher?->user?->name ?? $session->teacher->user->name }}</td>
                     <td>
                         @if($session->teachingJournal)
                             <span class="badge text-bg-success">Sudah Diisi</span>
@@ -32,7 +34,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="7" class="text-center text-secondary">Belum ada sesi absensi kelas.</td></tr>
+                <tr><td colspan="9" class="text-center text-secondary">Belum ada sesi absensi kelas.</td></tr>
             @endforelse
             </tbody>
         </table>

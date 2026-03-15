@@ -16,10 +16,12 @@
             <div class="col-12"><label class="form-label">Alasan</label><textarea class="form-control" name="reason" rows="3" required>{{ old('reason') }}</textarea></div>
             <div class="col-12">
                 <label class="form-label">Lampiran / Foto Pendukung</label>
-                <input type="file" class="form-control" name="attachment" accept="image/*,application/pdf" capture="environment">
-                <small class="text-secondary">Bisa foto langsung dari HP atau upload dari galeri/dokumen. Opsional.</small>
+                <input type="file" class="form-control" name="attachment" accept=".png,.jpg,.jpeg,application/pdf" capture="environment">
+                <small class="text-secondary">Bisa foto langsung dari HP atau upload dari galeri/dokumen. Maks 10MB. Opsional.</small>
             </div>
             <div class="col-12"><button class="btn btn-primary btn-action-lg">Kirim Izin</button></div>
         </form>
     </x-panel>
 </x-layouts.app>
+
+

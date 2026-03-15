@@ -21,4 +21,9 @@ class Subject extends Model
     {
         return $this->hasMany(TeachingSchedule::class);
     }
+
+    public function teachingModules(): HasMany
+    {
+        return $this->hasMany(TeachingModule::class);
+    }
 }

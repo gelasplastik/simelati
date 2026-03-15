@@ -4,31 +4,67 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 window.axios = axios;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {
-            // Silent fail to avoid breaking UX when service worker is unavailable.
-        });
-    });
-}
-
 let deferredInstallPrompt = null;
 const promptDismissKey = 'simelati_pwa_prompt_dismissed';
 const standaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+let swRegistration = null;
+const dismissDurationMs = 7 * 24 * 60 * 60 * 1000;
+
+function promptDismissed() {
+    const value = Number(window.localStorage.getItem(promptDismissKey) || 0);
+    if (!value) {
+        return false;
+    }
+    return Date.now() - value < dismissDurationMs;
+}
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+        try {
+            swRegistration = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' });
+
+            if (swRegistration.waiting) {
+                showUpdatePrompt();
+            }
+
+            swRegistration.addEventListener('updatefound', () => {
+                const worker = swRegistration.installing;
+                if (!worker) {
+                    return;
+                }
+
+                worker.addEventListener('statechange', () => {
+                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                        showUpdatePrompt();
+                    }
+                });
+            });
+        } catch (_) {
+            // silent fail
+        }
+    });
+}
 
 function showInstallPrompt() {
     const promptEl = document.getElementById('pwaInstallPrompt');
+    const topbarInstallBtn = document.getElementById('pwaInstallTopbar');
     if (!promptEl) {
         return;
     }
 
-    const dismissed = window.localStorage.getItem(promptDismissKey);
-    if (dismissed || standaloneMode) {
+    const dismissed = promptDismissed();
+    if (standaloneMode) {
         promptEl.hidden = true;
+        if (topbarInstallBtn) {
+            topbarInstallBtn.hidden = true;
+        }
         return;
     }
 
-    promptEl.hidden = false;
+    promptEl.hidden = !!dismissed;
+    if (topbarInstallBtn) {
+        topbarInstallBtn.hidden = false;
+    }
 }
 
 function isIos() {
@@ -52,8 +88,12 @@ window.addEventListener('beforeinstallprompt', (event) => {
 window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null;
     const promptEl = document.getElementById('pwaInstallPrompt');
+    const topbarInstallBtn = document.getElementById('pwaInstallTopbar');
     if (promptEl) {
         promptEl.hidden = true;
+    }
+    if (topbarInstallBtn) {
+        topbarInstallBtn.hidden = true;
     }
 });
 
@@ -63,27 +103,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const promptEl = document.getElementById('pwaInstallPrompt');
     const installBtn = document.getElementById('pwaInstallBtn');
     const dismissBtn = document.getElementById('pwaInstallDismiss');
+    const topbarInstallBtn = document.getElementById('pwaInstallTopbar');
+    const updateBtn = document.getElementById('pwaUpdateBtn');
 
-    if (!promptEl || !installBtn || !dismissBtn) {
-        return;
-    }
-
-    installBtn.addEventListener('click', async () => {
+    const runInstall = async () => {
         if (deferredInstallPrompt) {
             deferredInstallPrompt.prompt();
             await deferredInstallPrompt.userChoice;
             deferredInstallPrompt = null;
-            promptEl.hidden = true;
+            if (promptEl) {
+                promptEl.hidden = true;
+            }
+            if (topbarInstallBtn) {
+                topbarInstallBtn.hidden = true;
+            }
             return;
         }
 
         window.alert(installHelpMessage());
-    });
+    };
 
-    dismissBtn.addEventListener('click', () => {
-        window.localStorage.setItem(promptDismissKey, '1');
-        promptEl.hidden = true;
-    });
+    if (installBtn) {
+        installBtn.addEventListener('click', runInstall);
+    }
+
+    if (topbarInstallBtn) {
+        topbarInstallBtn.addEventListener('click', runInstall);
+    }
+
+    if (dismissBtn && promptEl) {
+        dismissBtn.addEventListener('click', () => {
+            window.localStorage.setItem(promptDismissKey, String(Date.now()));
+            promptEl.hidden = true;
+            if (topbarInstallBtn) {
+                topbarInstallBtn.hidden = true;
+            }
+        });
+    }
+
+    if (updateBtn) {
+        updateBtn.addEventListener('click', () => {
+            if (swRegistration?.waiting) {
+                swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+            window.location.reload();
+        });
+    }
 });
 
 document.addEventListener('submit', (event) => {
@@ -104,3 +169,12 @@ document.addEventListener('submit', (event) => {
     submitter.disabled = true;
     submitter.innerHTML = '<span class=\"spinner-border spinner-border-sm me-1\" role=\"status\" aria-hidden=\"true\"></span>Menyimpan...';
 });
+
+function showUpdatePrompt() {
+    const updateEl = document.getElementById('pwaUpdatePrompt');
+    if (!updateEl) {
+        return;
+    }
+    updateEl.hidden = false;
+}
+

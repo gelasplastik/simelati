@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use App\Domain\Attendance\LeaveCoverageService;
 use App\Domain\Attendance\SessionAccessService;
 use App\Domain\ClassAttendance\TeachingJournalService;
 use App\Http\Controllers\Controller;
@@ -9,14 +10,16 @@ use App\Http\Requests\Teacher\TeachingJournalStoreRequest;
 use App\Http\Requests\Teacher\TeachingJournalUpdateRequest;
 use App\Models\ClassAttendanceSession;
 use App\Models\TeachingJournal;
-use InvalidArgumentException;
+use App\Support\SafeFileUpload;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 
 class TeacherTeachingJournalController extends Controller
 {
     public function __construct(
         private readonly TeachingJournalService $service,
         private readonly SessionAccessService $accessService,
+        private readonly LeaveCoverageService $coverageService,
     ) {
     }
 
@@ -31,8 +34,11 @@ class TeacherTeachingJournalController extends Controller
         }
 
         $sessions = ClassAttendanceSession::query()
-            ->with(['class', 'subject', 'teachingJournal'])
-            ->where('teacher_id', $teacher->id)
+            ->with(['class', 'subject', 'teachingJournal', 'originalTeacher.user', 'executingTeacher.user'])
+            ->where(function ($q) use ($teacher) {
+                $q->where('teacher_id', $teacher->id)
+                    ->orWhere('executing_teacher_id', $teacher->id);
+            })
             ->latest('date')
             ->paginate(20);
 
@@ -42,7 +48,10 @@ class TeacherTeachingJournalController extends Controller
     public function create(ClassAttendanceSession $session)
     {
         $teacher = auth()->user()->teacher;
-        abort_unless($session->teacher_id === $teacher->id, 403);
+
+        if (! $this->coverageService->canTeacherExecuteSession($teacher, $session)) {
+            abort(403);
+        }
 
         try {
             $this->accessService->ensureTeacherCheckedInToday($teacher);
@@ -80,7 +89,11 @@ class TeacherTeachingJournalController extends Controller
             $this->accessService->ensureTeacherCheckedInToday($teacher);
 
             $session = ClassAttendanceSession::query()->findOrFail($request->integer('class_attendance_session_id'));
-            abort_unless($session->teacher_id === $teacher->id, 403);
+
+            if (! $this->coverageService->canTeacherExecuteSession($teacher, $session)) {
+                abort(403);
+            }
+
             $this->accessService->ensureJournalAccessAllowed($session);
 
             if ($session->attendances()->count() === 0) {
@@ -88,11 +101,10 @@ class TeacherTeachingJournalController extends Controller
             }
 
             $payload = $request->validated();
-            if ($request->hasFile('attachment')) {
-                $payload['attachment_path'] = $request->file('attachment')->store('teaching-journals', 'public');
-            }
+            $payload['attachment_path'] = SafeFileUpload::storePublic($request->file('attachment'), 'teaching-journals');
 
             $journal = $this->service->createOrUpdate($session, $teacher->id, $payload);
+            $this->coverageService->markCompletedForSession($session);
 
             return redirect()->route('teacher.teaching-journals.edit', $journal)->with('success', 'Jurnal mengajar berhasil disimpan.');
         } catch (InvalidArgumentException $exception) {
@@ -116,6 +128,10 @@ class TeacherTeachingJournalController extends Controller
         abort_unless($journal->teacher_id === $teacher->id, 403);
 
         $session = $journal->classAttendanceSession()->with(['class', 'subject', 'attendances.student'])->firstOrFail();
+
+        if (! $this->coverageService->canTeacherExecuteSession($teacher, $session)) {
+            abort(403);
+        }
 
         try {
             $this->accessService->ensureTeacherCheckedInToday($teacher);
@@ -149,12 +165,17 @@ class TeacherTeachingJournalController extends Controller
             $teacher = $request->user()->teacher;
             abort_unless($journal->teacher_id === $teacher->id, 403);
 
+            $session = $journal->classAttendanceSession;
+            if (! $this->coverageService->canTeacherExecuteSession($teacher, $session)) {
+                abort(403);
+            }
+
             $this->accessService->ensureTeacherCheckedInToday($teacher);
-            $this->accessService->ensureJournalAccessAllowed($journal->classAttendanceSession);
+            $this->accessService->ensureJournalAccessAllowed($session);
 
             $payload = $request->validated();
             if ($request->hasFile('attachment')) {
-                $newPath = $request->file('attachment')->store('teaching-journals', 'public');
+                $newPath = SafeFileUpload::storePublic($request->file('attachment'), 'teaching-journals');
                 if ($journal->attachment_path) {
                     Storage::disk('public')->delete($journal->attachment_path);
                 }
@@ -162,6 +183,7 @@ class TeacherTeachingJournalController extends Controller
             }
 
             $this->service->createOrUpdate($journal->classAttendanceSession, $teacher->id, $payload);
+            $this->coverageService->markCompletedForSession($session);
 
             return back()->with('success', 'Jurnal mengajar berhasil diperbarui.');
         } catch (InvalidArgumentException $exception) {

@@ -1,13 +1,25 @@
 <x-layouts.app :title="'Teacher Dashboard - SIMELATI'" :pageTitle="'Dashboard Guru'" :breadcrumb="'Teacher / Dashboard'">
-    <div class="row g-3 mb-3">
-        <div class="col-6 col-md-4">
+    <div class="dashboard-shell">
+        <div class="dashboard-hero">
+            <div class="title">Ringkasan Aktivitas Guru Hari Ini</div>
+            <div class="small text-secondary">Aksi utama, jadwal, dan progres modul Anda tersaji dalam satu layar.</div>
+        </div>
+
+        <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3">
             <x-stat-card label="Status Absen Hari Ini" :value="$todayAttendance ? 'Sudah Absen' : 'Belum Absen'" icon="bi-fingerprint" variant="success" />
         </div>
-        <div class="col-6 col-md-4">
+        <div class="col-6 col-md-3">
             <x-stat-card label="KPI Bulan Ini" :value="$kpi['total_score'] ?? 0" icon="bi-award" variant="warning" />
         </div>
-        <div class="col-6 col-md-4">
+        <div class="col-6 col-md-3">
             <x-stat-card label="Total Jurnal Bulan Ini" :value="$journalCount" icon="bi-journal-check" variant="primary" />
+        </div>
+        <div class="col-6 col-md-3">
+            <x-stat-card label="Progress Modul Ajar" :value="$moduleProgress['completion_percentage'].'%'" icon="bi-folder2-open" variant="info" />
+            <div class="small text-secondary px-2 mt-1">
+                Upload: {{ $moduleProgress['uploaded_count'] }} | Approved: {{ $moduleProgress['approved_count'] }} / {{ $moduleProgress['total_assigned'] }} assignment
+            </div>
         </div>
     </div>
 
@@ -53,8 +65,8 @@
                 <div class="schedule-mobile-item">
                     <div class="d-flex justify-content-between align-items-start mb-1">
                         <div>
-                            <div class="fw-semibold">Jam {{ $schedule->jam_ke }} • {{ $schedule->subject->name }}</div>
-                            <div class="schedule-mobile-meta">Kelas {{ $schedule->class->name }} • {{ $schedule->start_time ?: '-' }} - {{ $schedule->end_time ?: '-' }}</div>
+                            <div class="fw-semibold">Jam {{ $schedule->jam_ke }} - {{ $schedule->subject->name }}</div>
+                            <div class="schedule-mobile-meta">Kelas {{ $schedule->class->name }} - {{ $schedule->start_time ?: '-' }} - {{ $schedule->end_time ?: '-' }}</div>
                         </div>
                     </div>
                     <div class="d-flex flex-wrap gap-1 mb-2">
@@ -144,6 +156,49 @@
                 @endforelse
                 </tbody>
             </table>
+        </div>
+    </x-panel>
+
+    <x-panel title="Kalender Bulanan Saya" class="mb-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div class="fw-semibold">{{ $calendarWidget['month_label'] }}</div>
+            <div class="d-flex gap-2">
+                <a class="btn btn-sm btn-outline-primary" href="{{ route('teacher.dashboard', ['calendar_year' => $calendarWidget['prev']['year'], 'calendar_month' => $calendarWidget['prev']['month']]) }}"><i class="bi bi-chevron-left"></i></a>
+                <a class="btn btn-sm btn-outline-primary" href="{{ route('teacher.dashboard', ['calendar_year' => $calendarWidget['next']['year'], 'calendar_month' => $calendarWidget['next']['month']]) }}"><i class="bi bi-chevron-right"></i></a>
+            </div>
+        </div>
+
+        <div class="month-calendar-grid">
+            @foreach($calendarWidget['weekdays'] as $weekday)
+                <div class="month-calendar-weekday">{{ $weekday }}</div>
+            @endforeach
+            @foreach($calendarWidget['weeks'] as $week)
+                @foreach($week as $cell)
+                    <div class="month-calendar-cell {{ ! $cell['is_current_month'] ? 'is-muted' : '' }} {{ $cell['is_today'] ? 'is-today' : '' }}">
+                        <div class="month-calendar-date">{{ $cell['date']->day }}</div>
+                        <div class="month-calendar-events">
+                            @foreach($cell['events']->take(2) as $event)
+                                <div class="month-event-chip" style="--event-color: {{ $event['color'] }};" title="{{ $event['title'] }}">{{ $event['label'] }}: {{ $event['title'] }}</div>
+                            @endforeach
+
+                            @foreach($cell['schedules']->take(2) as $schedule)
+                                <div class="month-schedule-chip" title="Jam {{ $schedule['jam_ke'] }} {{ $schedule['subject'] }} Kelas {{ $schedule['class'] }}">
+                                    J{{ $schedule['jam_ke'] }} � {{ $schedule['subject'] }} ({{ $schedule['class'] }})
+                                </div>
+                            @endforeach
+
+                            @if($cell['events']->isEmpty() && $cell['schedules']->isEmpty())
+                                <div class="month-event-empty">-</div>
+                            @endif
+
+                            @php($extraCount = max(0, $cell['events']->count() - 2) + max(0, $cell['schedules']->count() - 2))
+                            @if($extraCount > 0)
+                                <div class="month-event-more">+{{ $extraCount }} item</div>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            @endforeach
         </div>
     </x-panel>
 
@@ -269,6 +324,7 @@
             }
         </script>
     @endif
+    </div>
 
     <div class="modal fade" id="checkinModal" tabindex="-1">
         <div class="modal-dialog">
@@ -324,3 +380,7 @@
         bindGps('btnCheckoutLocation', 'checkoutGpsStatus', 'co_lat', 'co_lng', 'co_accuracy', 'btnCheckoutSubmit');
     </script>
 </x-layouts.app>
+
+
+
+

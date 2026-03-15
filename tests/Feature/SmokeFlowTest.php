@@ -7,7 +7,6 @@ use App\Models\Attendance;
 use App\Models\ClassAttendance;
 use App\Models\ClassAttendanceSession;
 use App\Models\StudentPermission;
-use App\Models\Teacher;
 use App\Models\TeachingSchedule;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -48,7 +47,7 @@ class SmokeFlowTest extends TestCase
 
     public function test_teacher_restricted_before_checkin_then_can_access_workflow_after_checkin(): void
     {
-        $teacherUser = User::query()->where('email', 'teacher1@sdplusmelati.local')->firstOrFail();
+        $teacherUser = User::query()->where('role', 'teacher')->firstOrFail();
         $teacher = $teacherUser->teacher;
         $assignment = Assignment::query()->where('teacher_id', $teacher->id)->firstOrFail();
 
@@ -141,12 +140,12 @@ class SmokeFlowTest extends TestCase
         $parent = User::query()->where('role', 'parent')->firstOrFail();
 
         $this->actingAs($parent);
-        $this->get(route('admin.dashboard'))->assertForbidden();
+        $this->get(route('admin.dashboard'))->assertRedirect(route('parent.dashboard'));
 
         $this->actingAs($teacher);
-        $this->get(route('parent.dashboard'))->assertForbidden();
+        $this->get(route('parent.dashboard'))->assertRedirect(route('teacher.dashboard'));
 
         $this->actingAs($admin);
-        $this->get(route('teacher.dashboard'))->assertForbidden();
+        $this->get(route('teacher.dashboard'))->assertRedirect(route('admin.dashboard'));
     }
 }

@@ -1,4 +1,4 @@
-<x-layouts.app :title="'Permintaan Izin Pengisian Susulan'" :pageTitle="'Permintaan Izin Pengisian Susulan'" :breadcrumb="'Admin / Permintaan Izin Pengisian Susulan'">
+<x-layouts.app :title="'Permintaan Absensi/Jurnal Susulan'" :pageTitle="'Permintaan Absensi/Jurnal Susulan'" :breadcrumb="'Admin / Permintaan Absensi/Jurnal Susulan'">
     <x-panel class="mb-3">
         <form method="GET" class="row g-2">
             <div class="col-md-3"><select class="form-select" name="teacher_id"><option value="">Semua Guru</option>@foreach($teachers as $teacher)<option value="{{ $teacher->id }}" @selected(request('teacher_id')==$teacher->id)>{{ $teacher->user->name }}</option>@endforeach</select></div>
@@ -40,3 +40,4 @@
         {{ $items->links() }}
     </x-panel>
 </x-layouts.app>
+

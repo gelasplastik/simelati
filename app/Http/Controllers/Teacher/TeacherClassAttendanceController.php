@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use App\Domain\Attendance\LeaveCoverageService;
 use App\Domain\Attendance\SessionAccessService;
 use App\Domain\MasterData\TeachingScheduleService;
 use App\Domain\Permissions\PermissionService;
@@ -11,6 +12,7 @@ use App\Models\Assignment;
 use App\Models\ClassAttendance;
 use App\Models\ClassAttendanceSession;
 use App\Models\Student;
+use App\Models\TeacherSubstituteAssignment;
 use App\Models\TeachingSchedule;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -21,6 +23,7 @@ class TeacherClassAttendanceController extends Controller
         private readonly PermissionService $permissionService,
         private readonly SessionAccessService $accessService,
         private readonly TeachingScheduleService $teachingScheduleService,
+        private readonly LeaveCoverageService $coverageService,
     ) {
     }
 
@@ -36,11 +39,33 @@ class TeacherClassAttendanceController extends Controller
         $selectedSubject = request('subject_id');
         $selectedDate = request('date', now()->toDateString());
         $selectedJamKe = (int) request('jam_ke', 1);
+        $activeSubstituteAssignment = null;
+        $ownerTeacherId = $teacher->id;
 
         try {
             $this->accessService->ensureTeacherCheckedInToday($teacher);
         } catch (InvalidArgumentException $exception) {
             return redirect()->route('teacher.dashboard')->with('error', $exception->getMessage());
+        }
+
+        if (request()->filled('substitute_assignment_id')) {
+            $activeSubstituteAssignment = TeacherSubstituteAssignment::query()
+                ->with(['class', 'subject', 'originalTeacher.user'])
+                ->where('id', (int) request('substitute_assignment_id'))
+                ->where('substitute_teacher_id', $teacher->id)
+                ->whereIn('status', ['assigned', 'completed'])
+                ->first();
+
+            if (! $activeSubstituteAssignment) {
+                return redirect()->route('teacher.substitute-tasks.index')->with('error', 'Tugas guru pengganti tidak ditemukan.');
+            }
+
+            $ownerTeacherId = $activeSubstituteAssignment->original_teacher_id;
+            $selectedClass = (string) $activeSubstituteAssignment->class_id;
+            $selectedSubject = (string) $activeSubstituteAssignment->subject_id;
+            $selectedDate = $activeSubstituteAssignment->date->toDateString();
+            $selectedJamKe = (int) $activeSubstituteAssignment->jam_ke;
+            $classes = $classes->push($activeSubstituteAssignment->class)->unique('id')->sortBy('name')->values();
         }
 
         if ($selectedScheduleId) {
@@ -67,13 +92,17 @@ class TeacherClassAttendanceController extends Controller
             ->sortBy('name')
             ->values();
 
+        if ($activeSubstituteAssignment) {
+            $subjects = $subjects->push($activeSubstituteAssignment->subject)->unique('id')->sortBy('name')->values();
+        }
+
         $students = collect();
         $session = null;
         $hasOverride = false;
 
         if ($selectedClass && $selectedSubject) {
             $session = ClassAttendanceSession::query()
-                ->where('teacher_id', $teacher->id)
+                ->where('teacher_id', $ownerTeacherId)
                 ->where('class_id', $selectedClass)
                 ->where('subject_id', $selectedSubject)
                 ->whereDate('date', $selectedDate)
@@ -133,6 +162,7 @@ class TeacherClassAttendanceController extends Controller
             'selectedSchedule',
             'session',
             'hasOverride',
+            'activeSubstituteAssignment',
         ));
     }
 
@@ -142,8 +172,29 @@ class TeacherClassAttendanceController extends Controller
             $teacher = $request->user()->teacher;
             $this->accessService->ensureTeacherCheckedInToday($teacher);
 
+            $substituteAssignment = null;
+            $ownerTeacherId = $teacher->id;
+            if ($request->filled('substitute_assignment_id')) {
+                $substituteAssignment = TeacherSubstituteAssignment::query()
+                    ->where('id', $request->integer('substitute_assignment_id'))
+                    ->where('substitute_teacher_id', $teacher->id)
+                    ->whereIn('status', ['assigned', 'completed'])
+                    ->firstOrFail();
+
+                $sameSession = $substituteAssignment->class_id === $request->integer('class_id')
+                    && $substituteAssignment->subject_id === $request->integer('subject_id')
+                    && $substituteAssignment->jam_ke === $request->integer('jam_ke')
+                    && $substituteAssignment->date->toDateString() === $request->date('date')->toDateString();
+
+                if (! $sameSession) {
+                    throw new InvalidArgumentException('Data absensi tidak sesuai dengan sesi guru pengganti.');
+                }
+
+                $ownerTeacherId = $substituteAssignment->original_teacher_id;
+            }
+
             $existingSession = ClassAttendanceSession::query()
-                ->where('teacher_id', $teacher->id)
+                ->where('teacher_id', $ownerTeacherId)
                 ->where('class_id', $request->integer('class_id'))
                 ->where('subject_id', $request->integer('subject_id'))
                 ->whereDate('date', $request->date('date')->toDateString())
@@ -152,14 +203,16 @@ class TeacherClassAttendanceController extends Controller
 
             $this->accessService->ensureClassAttendanceDateAllowed($request->date, $existingSession);
 
-            $isAssigned = Assignment::query()
-                ->where('teacher_id', $teacher->id)
-                ->where('class_id', $request->integer('class_id'))
-                ->where('subject_id', $request->integer('subject_id'))
-                ->exists();
+            if (! $substituteAssignment) {
+                $isAssigned = Assignment::query()
+                    ->where('teacher_id', $teacher->id)
+                    ->where('class_id', $request->integer('class_id'))
+                    ->where('subject_id', $request->integer('subject_id'))
+                    ->exists();
 
-            if (! $isAssigned) {
-                throw new InvalidArgumentException('Mapel dan kelas tidak sesuai assignment guru.');
+                if (! $isAssigned) {
+                    throw new InvalidArgumentException('Mapel dan kelas tidak sesuai assignment guru.');
+                }
             }
 
             $teachingSchedule = null;
@@ -167,7 +220,7 @@ class TeacherClassAttendanceController extends Controller
                 $activeProfile = $this->teachingScheduleService->getActiveProfile();
                 $teachingSchedule = TeachingSchedule::query()
                     ->where('schedule_profile_id', $activeProfile->id)
-                    ->where('teacher_id', $teacher->id)
+                    ->where('teacher_id', $ownerTeacherId)
                     ->find($request->integer('teaching_schedule_id'));
 
                 if (! $teachingSchedule) {
@@ -183,17 +236,21 @@ class TeacherClassAttendanceController extends Controller
                 }
             }
 
-            $session = DB::transaction(function () use ($request, $teacher, $existingSession, $teachingSchedule) {
+            $session = DB::transaction(function () use ($request, $teacher, $existingSession, $teachingSchedule, $ownerTeacherId, $substituteAssignment) {
                 if ($existingSession) {
                     $session = $existingSession;
                     $session->update([
                         'date' => $request->date('date')->toDateString(),
                         'jam_ke' => $request->integer('jam_ke'),
                         'teaching_schedule_id' => $teachingSchedule?->id ?? $session->teaching_schedule_id,
+                        'original_teacher_id' => $ownerTeacherId,
+                        'executing_teacher_id' => $substituteAssignment ? $teacher->id : ($session->executing_teacher_id ?? null),
                     ]);
                 } else {
                     $session = ClassAttendanceSession::query()->create([
-                        'teacher_id' => $teacher->id,
+                        'teacher_id' => $ownerTeacherId,
+                        'original_teacher_id' => $ownerTeacherId,
+                        'executing_teacher_id' => $substituteAssignment ? $teacher->id : null,
                         'class_id' => $request->integer('class_id'),
                         'subject_id' => $request->integer('subject_id'),
                         'teaching_schedule_id' => $teachingSchedule?->id,
@@ -221,6 +278,7 @@ class TeacherClassAttendanceController extends Controller
                 'date' => $request->date,
                 'jam_ke' => $request->jam_ke,
                 'teaching_schedule_id' => $request->teaching_schedule_id,
+                'substitute_assignment_id' => $request->substitute_assignment_id,
             ])->with('success', 'Absensi kelas tersimpan.')->with('saved_session_id', $session->id);
         } catch (InvalidArgumentException $exception) {
             $requestUrl = route('teacher.late-entry-requests.create', [
@@ -235,3 +293,5 @@ class TeacherClassAttendanceController extends Controller
         }
     }
 }
+
+

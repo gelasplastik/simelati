@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Teacher extends Model
@@ -39,6 +38,11 @@ class Teacher extends Model
         return $this->hasMany(TeachingJournal::class);
     }
 
+    public function teachingModules(): HasMany
+    {
+        return $this->hasMany(TeachingModule::class);
+    }
+
     public function homeroomClasses(): HasMany
     {
         return $this->hasMany(SchoolClass::class, 'homeroom_teacher_id');
@@ -62,5 +66,25 @@ class Teacher extends Model
     public function teachingSchedules(): HasMany
     {
         return $this->hasMany(TeachingSchedule::class);
+    }
+
+    public function substituteAssignmentsReceived(): HasMany
+    {
+        return $this->hasMany(TeacherSubstituteAssignment::class, 'substitute_teacher_id');
+    }
+
+    public function substituteAssignmentsAsOriginal(): HasMany
+    {
+        return $this->hasMany(TeacherSubstituteAssignment::class, 'original_teacher_id');
+    }
+
+    public function dutyAssignments(): HasMany
+    {
+        return $this->hasMany(DutyTeacherAssignment::class);
+    }
+
+    public function dutyReportsAsPic(): HasMany
+    {
+        return $this->hasMany(DutyReport::class, 'duty_teacher_id');
     }
 }

@@ -9,6 +9,7 @@
             <tr>
                 <th>Tanggal</th>
                 <th>Alasan</th>
+                <th>Coverage</th>
                 <th>Status</th>
                 <th>Lampiran</th>
                 <th>Dibuat</th>
@@ -21,6 +22,17 @@
                 <tr>
                     <td>{{ $item->date_from->format('d-m-Y') }} s/d {{ $item->date_to->format('d-m-Y') }}</td>
                     <td>{{ $item->reason }}</td>
+                    <td>
+                        @if($item->affects_teaching_schedule)
+                            <span class="badge text-bg-warning">Affects Schedule</span>
+                            <div class="small text-secondary">Usulan: {{ $item->proposedSubstituteTeacher?->user?->name ?? '-' }}</div>
+                            @if($item->coverage_notes)
+                                <div class="small">{{ $item->coverage_notes }}</div>
+                            @endif
+                        @else
+                            -
+                        @endif
+                    </td>
                     <td><span class="badge text-bg-secondary text-uppercase">{{ $item->status }}</span></td>
                     <td>
                         @if($path)
@@ -39,7 +51,7 @@
                     <td>{{ $item->created_at->format('d-m-Y H:i') }}</td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="text-center text-secondary">Belum ada izin guru.</td></tr>
+                <tr><td colspan="6" class="text-center text-secondary">Belum ada izin guru.</td></tr>
             @endforelse
             </tbody>
         </table>

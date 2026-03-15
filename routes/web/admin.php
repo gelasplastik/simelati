@@ -2,9 +2,13 @@
 
 use App\Http\Controllers\Admin\AdminLateEntryRequestController;
 use App\Http\Controllers\Admin\AssignmentController;
+use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminStudentImportController;
+use App\Http\Controllers\Admin\AcademicCalendarController;
 use App\Http\Controllers\Admin\ClassController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DutyReportController;
+use App\Http\Controllers\Admin\DutyTeacherAssignmentController;
 use App\Http\Controllers\Admin\ParentController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ReportController;
@@ -15,11 +19,14 @@ use App\Http\Controllers\Admin\StudentAttendanceRecapController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\TeacherController;
 use App\Http\Controllers\Admin\TeacherLeaveRequestController;
+use App\Http\Controllers\Admin\TeachingModuleController;
 use App\Http\Controllers\Admin\TeachingScheduleController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::post('/notifications/mark-all-read', [AdminNotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
+
 
     Route::get('/teachers', [TeacherController::class, 'index'])->name('teachers.index');
     Route::post('/teachers', [TeacherController::class, 'store'])->name('teachers.store');
@@ -47,12 +54,21 @@ Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function
     Route::post('/teaching-schedules', [TeachingScheduleController::class, 'store'])->name('teaching-schedules.store');
     Route::put('/teaching-schedules/{schedule}', [TeachingScheduleController::class, 'update'])->name('teaching-schedules.update');
 
+    Route::get('/teaching-modules', [TeachingModuleController::class, 'index'])->name('teaching-modules.index');
+    Route::patch('/teaching-modules/{module}/review', [TeachingModuleController::class, 'review'])->name('teaching-modules.review');
+
     Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
     Route::post('/assignments', [AssignmentController::class, 'store'])->name('assignments.store');
     Route::put('/assignments/{assignment}', [AssignmentController::class, 'update'])->name('assignments.update');
     Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy'])->name('assignments.destroy');
 
     Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit');
+    Route::get('/calendar', [AcademicCalendarController::class, 'index'])->name('calendar.index');
+    Route::post('/calendar', [AcademicCalendarController::class, 'store'])->name('calendar.store');
+    Route::put('/calendar/{event}', [AcademicCalendarController::class, 'update'])->name('calendar.update');
+    Route::delete('/calendar/{event}', [AcademicCalendarController::class, 'destroy'])->name('calendar.destroy');
+    Route::post('/calendar/sync-national', [AcademicCalendarController::class, 'syncNational'])->name('calendar.sync-national');
+
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
@@ -69,6 +85,16 @@ Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function
 
     Route::get('/teacher-leave-requests', [TeacherLeaveRequestController::class, 'index'])->name('teacher-leave-requests.index');
     Route::patch('/teacher-leave-requests/{teacherLeaveRequest}/review', [TeacherLeaveRequestController::class, 'review'])->name('teacher-leave-requests.review');
+    Route::patch('/teacher-leave-requests/substitutes/{assignment}/assign', [TeacherLeaveRequestController::class, 'assignSubstitute'])->name('teacher-leave-requests.substitutes.assign');
+
+    Route::get('/duty-teacher-assignments', [DutyTeacherAssignmentController::class, 'index'])->name('duty-assignments.index');
+    Route::post('/duty-teacher-assignments', [DutyTeacherAssignmentController::class, 'store'])->name('duty-assignments.store');
+    Route::delete('/duty-teacher-assignments/{assignment}', [DutyTeacherAssignmentController::class, 'destroy'])->name('duty-assignments.destroy');
+
+    Route::get('/duty-reports', [DutyReportController::class, 'index'])->name('duty-reports.index');
+    Route::get('/duty-reports/{report}', [DutyReportController::class, 'show'])->name('duty-reports.show');
+    Route::patch('/duty-reports/{report}', [DutyReportController::class, 'update'])->name('duty-reports.update');
+    Route::get('/duty-reports/{report}/print', [DutyReportController::class, 'print'])->name('duty-reports.print');
 
     Route::get('/reports/attendance', [ReportController::class, 'attendance'])->name('reports.attendance');
     Route::get('/reports/journals', [ReportController::class, 'journals'])->name('reports.journals');
@@ -80,3 +106,6 @@ Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function
     Route::get('/reports/student-attendance-recap', StudentAttendanceRecapController::class)->name('reports.student-attendance-recap');
     Route::get('/reports/student-attendance-recap/export', [StudentAttendanceRecapController::class, 'export'])->name('reports.student-attendance-recap.export');
 });
+
+
+

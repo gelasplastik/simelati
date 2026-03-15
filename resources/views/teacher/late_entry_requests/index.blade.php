@@ -1,5 +1,5 @@
-<x-layouts.app :title="'Permintaan Izin Pengisian Susulan'" :pageTitle="'Permintaan Izin Pengisian Susulan'" :breadcrumb="'Teacher / Permintaan Izin'">
-    <div class="mb-3"><a class="btn btn-primary" href="{{ route('teacher.late-entry-requests.create') }}">Ajukan Izin</a></div>
+<x-layouts.app :title="'Permintaan Absensi/Jurnal Susulan'" :pageTitle="'Permintaan Absensi/Jurnal Susulan'" :breadcrumb="'Teacher / Permintaan Absensi/Jurnal'">
+    <div class="mb-3"><a class="btn btn-primary" href="{{ route('teacher.late-entry-requests.create') }}">Ajukan Permintaan</a></div>
     <x-panel>
         <table class="table table-sm align-middle">
             <thead><tr><th>Tanggal</th><th>Kelas</th><th>Mapel</th><th>Jam Ke</th><th>Jenis</th><th>Alasan</th><th>Status</th><th>Dibuat Pada</th></tr></thead>
@@ -23,3 +23,4 @@
         {{ $items->links() }}
     </x-panel>
 </x-layouts.app>
+

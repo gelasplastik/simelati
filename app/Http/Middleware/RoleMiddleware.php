@@ -12,7 +12,21 @@ class RoleMiddleware
     {
         $user = $request->user();
 
-        if (! $user || ! in_array($user->role, $roles, true)) {
+        if (! $user) {
+            abort(403);
+        }
+
+        if (! in_array($user->role, $roles, true)) {
+            $targetRoute = match ($user->role) {
+                'admin' => 'admin.dashboard',
+                'teacher' => 'teacher.dashboard',
+                default => 'parent.dashboard',
+            };
+
+            if ($request->route()?->getName() !== $targetRoute) {
+                return redirect()->route($targetRoute);
+            }
+
             abort(403);
         }
 

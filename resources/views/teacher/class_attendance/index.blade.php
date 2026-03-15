@@ -5,9 +5,16 @@
         </div>
     @endif
 
+    @if($activeSubstituteAssignment)
+        <div class="alert alert-warning">
+            Anda ditugaskan sebagai guru pengganti untuk sesi ini. Guru asli: <strong>{{ $activeSubstituteAssignment->originalTeacher->user->name }}</strong>.
+        </div>
+    @endif
+
     <x-panel title="Filter Absensi" class="mb-3">
         <form class="row g-2" method="GET" action="{{ route('teacher.class-attendance.index') }}">
             <input type="hidden" name="teaching_schedule_id" value="{{ $selectedScheduleId }}">
+            <input type="hidden" name="substitute_assignment_id" value="{{ $activeSubstituteAssignment?->id }}">
             <div class="col-md-3"><label class="form-label">Tanggal</label><input class="form-control" type="date" name="date" value="{{ $selectedDate }}" required></div>
             <div class="col-md-3">
                 <label class="form-label">Kelas</label>
@@ -49,14 +56,15 @@
             <input type="hidden" name="class_id" value="{{ $selectedClass }}">
             <input type="hidden" name="subject_id" value="{{ $selectedSubject }}">
             <input type="hidden" name="teaching_schedule_id" value="{{ $selectedScheduleId }}">
+            <input type="hidden" name="substitute_assignment_id" value="{{ $activeSubstituteAssignment?->id }}">
             <input type="hidden" name="date" value="{{ $selectedDate }}">
             <input type="hidden" name="jam_ke" value="{{ $selectedJamKe }}">
 
             <x-panel class="mb-3">
                 <div class="row g-2 small text-secondary mb-2 session-meta">
                     <div class="col-md-3"><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($selectedDate)->format('d-m-Y') }}</div>
-                    <div class="col-md-3"><strong>Kelas:</strong> {{ optional($classes->firstWhere('id', $selectedClass))->name }}</div>
-                    <div class="col-md-3"><strong>Mapel:</strong> {{ optional($subjects->firstWhere('id', $selectedSubject))->name }}</div>
+                    <div class="col-md-3"><strong>Kelas:</strong> {{ optional($classes->firstWhere('id', $selectedClass))->name ?? $activeSubstituteAssignment?->class?->name }}</div>
+                    <div class="col-md-3"><strong>Mapel:</strong> {{ optional($subjects->firstWhere('id', $selectedSubject))->name ?? $activeSubstituteAssignment?->subject?->name }}</div>
                     <div class="col-md-3"><strong>Jam Ke:</strong> {{ $selectedJamKe }}</div>
                 </div>
                 <div class="d-flex justify-content-between mb-2">

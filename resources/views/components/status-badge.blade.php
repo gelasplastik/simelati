@@ -8,6 +8,7 @@
         'sakit' => 'sakit',
         'alpa' => 'alpa',
         'pending' => 'pending',
+        'draft' => 'pending',
         'submitted' => 'pending',
         'approved' => 'approved',
         'rejected' => 'rejected',
@@ -20,3 +21,4 @@
 @endphp
 
 <span {{ $attributes->merge(['class' => 'badge sim-badge '.$class]) }}>{{ $slot->isEmpty() ? ucfirst($status) : $slot }}</span>
+
