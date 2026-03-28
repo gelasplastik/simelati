@@ -35,9 +35,13 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return in_array($this->role, ['admin', 'superadmin'], true);
     }
 
+    public function isSuperadmin(): bool
+    {
+        return $this->role === 'superadmin';
+    }
     public function isTeacher(): bool
     {
         return $this->role === 'teacher';
@@ -48,3 +52,4 @@ class User extends Authenticatable
         return $this->role === 'parent';
     }
 }
+

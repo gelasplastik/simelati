@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers\Admin;
 
@@ -22,6 +22,7 @@ class SettingController extends Controller
             ...$request->validated(),
             'izin_requires_approval' => $request->boolean('izin_requires_approval'),
             'journal_lock_enabled' => $request->boolean('journal_lock_enabled'),
+            'attendance_journal_open_enabled' => $request->boolean('attendance_journal_open_enabled'),
         ]);
 
         return back()->with('success', 'Pengaturan berhasil disimpan.');

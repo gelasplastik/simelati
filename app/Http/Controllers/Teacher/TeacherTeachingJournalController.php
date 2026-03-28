@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\TeachingJournalStoreRequest;
 use App\Http\Requests\Teacher\TeachingJournalUpdateRequest;
 use App\Models\ClassAttendanceSession;
+use App\Models\Setting;
 use App\Models\TeachingJournal;
 use App\Support\SafeFileUpload;
 use Illuminate\Support\Facades\Storage;
@@ -68,7 +69,7 @@ class TeacherTeachingJournalController extends Controller
             return redirect()->route('teacher.teaching-journals.index')->with('error', $exception->getMessage())->with('late_entry_request_url', $requestUrl);
         }
 
-        abort_if($session->attendances()->count() === 0, 422, 'Silakan isi absensi kelas terlebih dahulu sebelum mengisi jurnal mengajar.');
+        abort_if(! $this->isAttendanceJournalOpenEnabled() && $session->attendances()->count() === 0, 422, 'Silakan isi absensi kelas terlebih dahulu sebelum mengisi jurnal mengajar.');
 
         $session->load(['class', 'subject', 'attendances.student']);
         $payload = $this->service->preloadForForm($session);
@@ -96,7 +97,7 @@ class TeacherTeachingJournalController extends Controller
 
             $this->accessService->ensureJournalAccessAllowed($session);
 
-            if ($session->attendances()->count() === 0) {
+            if (! $this->isAttendanceJournalOpenEnabled() && $session->attendances()->count() === 0) {
                 throw new InvalidArgumentException('Silakan isi absensi kelas terlebih dahulu sebelum mengisi jurnal mengajar.');
             }
 
@@ -200,6 +201,12 @@ class TeacherTeachingJournalController extends Controller
         }
     }
 
+
+    private function isAttendanceJournalOpenEnabled(): bool
+    {
+        return (bool) (Setting::active()->attendance_journal_open_enabled ?? false);
+    }
+
     public function history()
     {
         $teacher = auth()->user()->teacher;
@@ -219,3 +226,5 @@ class TeacherTeachingJournalController extends Controller
         return view('teacher.teaching_journals.history', compact('items'));
     }
 }
+
+

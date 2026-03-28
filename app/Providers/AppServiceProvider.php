@@ -36,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
                 $teacherDutyAttendanceAlerts = app(DutyAttendanceVerificationAlertService::class)->buildForTeacher($user->teacher);
             }
 
-            if ($user?->role === 'admin') {
+            if (in_array($user?->role, ['admin', 'superadmin'], true)) {
                 $adminPayload = app(AdminNotificationService::class)->buildForUser($user);
             }
 
@@ -52,3 +52,4 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 }
+

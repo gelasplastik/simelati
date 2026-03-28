@@ -8,7 +8,7 @@
 </div>
 
 <ul class="nav nav-pills flex-column gap-1 sidebar-nav">
-    @if($user->role === 'admin')
+    @if(in_array($user->role, ['admin', 'superadmin'], true))
         <li class="nav-item"><a class="nav-link {{ \App\Support\MenuHelper::isActive('admin.dashboard') }}" href="{{ route('admin.dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
         <li class="text-uppercase small text-secondary mt-2">Master Data</li>
         <li class="nav-item"><a class="nav-link {{ \App\Support\MenuHelper::isActive('admin.teachers.*') }}" href="{{ route('admin.teachers.index') }}"><i class="bi bi-person-badge me-2"></i>Guru</a></li>
@@ -41,6 +41,10 @@
         <li class="nav-item"><a class="nav-link {{ \App\Support\MenuHelper::isActive('admin.settings.*') }}" href="{{ route('admin.settings.edit') }}"><i class="bi bi-gear me-2"></i>Setting Absen</a></li>
         <li class="nav-item"><a class="nav-link {{ \App\Support\MenuHelper::isActive('admin.calendar.*') }}" href="{{ route('admin.calendar.index') }}"><i class="bi bi-calendar-week me-2"></i>Kalender Akademik</a></li>
         <li class="nav-item"><a class="nav-link {{ \App\Support\MenuHelper::isActive('admin.overrides.*') }}" href="{{ route('admin.overrides.index') }}"><i class="bi bi-shield-check me-2"></i>Session Override</a></li>
+        @if($user->role === 'superadmin')
+            <li class="text-uppercase small text-secondary mt-2">System</li>
+            <li class="nav-item"><a class="nav-link {{ \App\Support\MenuHelper::isActive('admin.system.update.*') }}" href="{{ route('admin.system.update.index') }}"><i class="bi bi-terminal me-2"></i>Application Update</a></li>
+        @endif
     @elseif($user->role === 'teacher')
         <li class="nav-item"><a class="nav-link {{ \App\Support\MenuHelper::isActive('teacher.dashboard') }}" href="{{ route('teacher.dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
         <li class="nav-item"><a class="nav-link {{ \App\Support\MenuHelper::isActive('teacher.attendance.history') }}" href="{{ route('teacher.attendance.history') }}"><i class="bi bi-geo me-2"></i>Absen Guru</a></li>

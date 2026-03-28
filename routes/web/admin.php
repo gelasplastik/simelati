@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\SessionOverrideController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\StudentAttendanceRecapController;
+use App\Http\Controllers\Admin\SystemUpdateController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\TeacherController;
 use App\Http\Controllers\Admin\TeacherLeaveRequestController;
@@ -70,6 +71,11 @@ Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function
     Route::post('/calendar/sync-national', [AcademicCalendarController::class, 'syncNational'])->name('calendar.sync-national');
 
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+    Route::middleware('superadmin')->prefix('/system/update')->name('system.update.')->group(function () {
+        Route::get('/', [SystemUpdateController::class, 'index'])->name('index');
+        Route::post('/run', [SystemUpdateController::class, 'run'])->name('run');
+    });
 
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
     Route::post('/permissions/{permission}/approve', [PermissionController::class, 'approve'])->name('permissions.approve');

@@ -183,7 +183,7 @@
 
                             @foreach($cell['schedules']->take(2) as $schedule)
                                 <div class="month-schedule-chip" title="Jam {{ $schedule['jam_ke'] }} {{ $schedule['subject'] }} Kelas {{ $schedule['class'] }}">
-                                    J{{ $schedule['jam_ke'] }} • {{ $schedule['subject'] }} ({{ $schedule['class'] }})
+                                    J{{ $schedule['jam_ke'] }} â€¢ {{ $schedule['subject'] }} ({{ $schedule['class'] }})
                                 </div>
                             @endforeach
 
@@ -380,6 +380,7 @@
         bindGps('btnCheckoutLocation', 'checkoutGpsStatus', 'co_lat', 'co_lng', 'co_accuracy', 'btnCheckoutSubmit');
     </script>
 </x-layouts.app>
+
 
 
 

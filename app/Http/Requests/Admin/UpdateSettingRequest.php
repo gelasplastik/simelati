@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Requests\Admin;
 
@@ -8,7 +8,7 @@ class UpdateSettingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->role === 'admin';
+        return in_array($this->user()?->role, ['admin', 'superadmin'], true);
     }
 
     public function rules(): array
@@ -22,6 +22,7 @@ class UpdateSettingRequest extends FormRequest
             'min_checkout_time' => ['required', 'date_format:H:i', 'after:late_tolerance_time'],
             'izin_requires_approval' => ['nullable', 'boolean'],
             'journal_lock_enabled' => ['nullable', 'boolean'],
+            'attendance_journal_open_enabled' => ['nullable', 'boolean'],
         ];
     }
 }

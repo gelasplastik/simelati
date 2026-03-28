@@ -1,9 +1,9 @@
-<nav class="navbar navbar-expand topbar">
+﻿<nav class="navbar navbar-expand topbar">
     <div class="container-fluid">
         <button class="btn btn-outline-secondary d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-label="Menu">
             <i class="bi bi-list"></i>
         </button>
-        <a class="navbar-brand mb-0 h5 d-flex align-items-center gap-2" href="{{ auth()->user()->role === 'admin' ? route('admin.dashboard') : (auth()->user()->role === 'teacher' ? route('teacher.dashboard') : route('parent.dashboard')) }}">
+        <a class="navbar-brand mb-0 h5 d-flex align-items-center gap-2" href="{{ in_array(auth()->user()->role, ['admin', 'superadmin'], true) ? route('admin.dashboard') : (auth()->user()->role === 'teacher' ? route('teacher.dashboard') : route('parent.dashboard')) }}">
             <img src="{{ asset('assets/logo/simelati-logo.png') }}" alt="SIMELATI" class="brand-logo">
             <div class="d-none d-sm-block">
                 <div class="fw-bold lh-1">SIMELATI</div>
@@ -11,12 +11,13 @@
             </div>
         </a>
         <div class="ms-auto d-flex align-items-center gap-3">
+            <div id="simelati-live-clock" class="badge rounded-pill text-bg-light border fw-semibold px-2 py-1 d-inline-flex" data-timezone="{{ config('app.timezone') ?: 'Asia/Makassar' }}">--:--:--</div>
             <button type="button" class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1" id="pwaInstallTopbar" hidden>
                 <i class="bi bi-phone"></i>
                 <span class="d-none d-md-inline">Install App</span>
             </button>
 
-            @if(auth()->user()->role === 'admin' && $topbarAdminNotifications)
+            @if(in_array(auth()->user()->role, ['admin', 'superadmin'], true) && $topbarAdminNotifications)
                 @php($hasUnread = ($topbarAdminNotifications['total_unread'] ?? 0) > 0)
                 <div class="dropdown">
                     <button class="btn btn-link text-decoration-none p-0 position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifikasi Pengajuan">
@@ -143,4 +144,37 @@
         </div>
     </div>
 </nav>
+
+
+
+<script>
+/* SIMELATI Topbar Live Clock */
+(function () {
+    const el = document.getElementById('simelati-live-clock');
+    if (!el) return;
+
+    const tz = (el.dataset.timezone || 'Asia/Makassar').trim();
+
+    function fmt(now, opts) {
+        try {
+            return new Intl.DateTimeFormat('id-ID', { ...opts, timeZone: tz }).format(now);
+        } catch (e) {
+            return new Intl.DateTimeFormat('id-ID', opts).format(now);
+        }
+    }
+
+    function tick() {
+        const now = new Date();
+        const jam = fmt(now, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        const tanggal = fmt(now, { weekday: 'short', day: '2-digit', month: 'short' });
+        const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+        el.textContent = isMobile ? jam : `${tanggal} • ${jam}`;
+    }
+
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
+
+
 

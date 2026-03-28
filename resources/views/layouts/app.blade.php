@@ -65,7 +65,7 @@
 
 @if($user)
     <nav class="mobile-bottom-nav d-md-none">
-        @if($user->role === 'admin')
+        @if(in_array($user->role, ['admin', 'superadmin'], true))
             <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="bi bi-house"></i>Dashboard</a>
             <a href="{{ route('admin.reports.attendance') }}" class="{{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"><i class="bi bi-graph-up"></i>Laporan</a>
             <a href="{{ route('admin.settings.edit') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"><i class="bi bi-gear"></i>Setting</a>
@@ -95,7 +95,10 @@
         <button type="button" class="btn btn-primary btn-sm" id="pwaUpdateBtn">Perbarui</button>
     </div>
 </div>
+
+@stack('scripts')
 </body>
 </html>
+
 
 

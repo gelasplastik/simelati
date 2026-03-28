@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Models;
 
@@ -18,11 +18,13 @@ class Setting extends Model
         'min_checkout_time',
         'izin_requires_approval',
         'journal_lock_enabled',
+        'attendance_journal_open_enabled',
     ];
 
     protected $casts = [
         'izin_requires_approval' => 'boolean',
         'journal_lock_enabled' => 'boolean',
+        'attendance_journal_open_enabled' => 'boolean',
     ];
 
     public static function active(): self
@@ -36,6 +38,8 @@ class Setting extends Model
             'min_checkout_time' => '12:00:00',
             'izin_requires_approval' => true,
             'journal_lock_enabled' => true,
+            'attendance_journal_open_enabled' => false,
         ]);
     }
 }
+

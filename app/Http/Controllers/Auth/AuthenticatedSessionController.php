@@ -27,7 +27,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         return redirect()->route(match (Auth::user()->role) {
-            'admin' => 'admin.dashboard',
+            'admin', 'superadmin' => 'admin.dashboard',
             'teacher' => 'teacher.dashboard',
             default => 'parent.dashboard',
         });
@@ -42,3 +42,4 @@ class AuthenticatedSessionController extends Controller
         return redirect()->route('login');
     }
 }
+

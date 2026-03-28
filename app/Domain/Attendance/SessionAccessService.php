@@ -37,6 +37,10 @@ class SessionAccessService
 
     public function ensureStudentAttendanceEnabledForDate(string $date): void
     {
+        if ($this->isAttendanceJournalOpenEnabled()) {
+            return;
+        }
+
         if (! $this->calendarService->isStudentAttendanceEnabled($date)) {
             throw new InvalidArgumentException('Absensi siswa dinonaktifkan pada tanggal ini berdasarkan Kalender Akademik.');
         }
@@ -44,6 +48,10 @@ class SessionAccessService
 
     public function ensureJournalEnabledForDate(string $date): void
     {
+        if ($this->isAttendanceJournalOpenEnabled()) {
+            return;
+        }
+
         if (! $this->calendarService->isJournalEnabled($date)) {
             throw new InvalidArgumentException('Jurnal mengajar dinonaktifkan pada tanggal ini berdasarkan Kalender Akademik.');
         }
@@ -51,6 +59,10 @@ class SessionAccessService
 
     public function ensureClassAttendanceDateAllowed(string $date, ?ClassAttendanceSession $session = null): void
     {
+        if ($this->isAttendanceJournalOpenEnabled()) {
+            return;
+        }
+
         $this->ensureStudentAttendanceEnabledForDate($date);
 
         $target = Carbon::parse($date)->toDateString();
@@ -68,6 +80,10 @@ class SessionAccessService
 
     public function ensureJournalAccessAllowed(ClassAttendanceSession $session): void
     {
+        if ($this->isAttendanceJournalOpenEnabled()) {
+            return;
+        }
+
         $date = $session->date->toDateString();
         $this->ensureJournalEnabledForDate($date);
 
@@ -85,5 +101,10 @@ class SessionAccessService
         }
 
         throw new InvalidArgumentException('Absensi atau jurnal hanya dapat diisi pada hari yang sama. Silakan ajukan izin pengisian susulan kepada admin.');
+    }
+
+    private function isAttendanceJournalOpenEnabled(): bool
+    {
+        return (bool) (Setting::active()->attendance_journal_open_enabled ?? false);
     }
 }

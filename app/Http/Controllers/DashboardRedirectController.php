@@ -11,9 +11,10 @@ class DashboardRedirectController extends Controller
         $user = $request->user();
 
         return redirect()->route(match ($user->role) {
-            'admin' => 'admin.dashboard',
+            'admin', 'superadmin' => 'admin.dashboard',
             'teacher' => 'teacher.dashboard',
             default => 'parent.dashboard',
         });
     }
 }
+

@@ -7,6 +7,7 @@ use App\Domain\MasterData\ScheduleProfileService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\TeacherScheduleJournalStoreRequest;
 use App\Models\ClassAttendanceSession;
+use App\Models\Setting;
 use App\Models\TeachingJournal;
 use App\Models\TeachingSchedule;
 use App\Support\SafeFileUpload;
@@ -95,7 +96,7 @@ class TeacherJournalController extends Controller
             $session->update(['teaching_schedule_id' => $schedule->id]);
         }
 
-        if ($session->attendances()->count() === 0) {
+        if (! $this->isAttendanceJournalOpenEnabled() && $session->attendances()->count() === 0) {
             return redirect()->route('teacher.class-attendance.index', [
                 'teaching_schedule_id' => $schedule->id,
                 'date' => $today,
@@ -157,7 +158,7 @@ class TeacherJournalController extends Controller
                     $session->update(['teaching_schedule_id' => $schedule->id]);
                 }
 
-                if ($session->attendances()->count() === 0) {
+                if (! $this->isAttendanceJournalOpenEnabled() && $session->attendances()->count() === 0) {
                     throw new InvalidArgumentException('Silakan isi absensi kelas terlebih dahulu sebelum mengisi jurnal.');
                 }
 
@@ -208,7 +209,13 @@ class TeacherJournalController extends Controller
 
         abort_unless($schedule->teacher_id === $teacherId, 403);
         abort_unless($schedule->schedule_profile_id === $activeProfile->id, 403);
-        abort_unless($schedule->day_of_week === $this->resolveDayOfWeek(), 403);
+        if (! $this->isAttendanceJournalOpenEnabled()) {
+            abort_unless($schedule->day_of_week === $this->resolveDayOfWeek(), 403);
+        }
+    }
+    private function isAttendanceJournalOpenEnabled(): bool
+    {
+        return (bool) (Setting::active()->attendance_journal_open_enabled ?? false);
     }
 
     private function resolveDayOfWeek(): string
@@ -224,3 +231,5 @@ class TeacherJournalController extends Controller
         };
     }
 }
+
+

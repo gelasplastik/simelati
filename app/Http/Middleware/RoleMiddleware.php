@@ -16,9 +16,11 @@ class RoleMiddleware
             abort(403);
         }
 
-        if (! in_array($user->role, $roles, true)) {
+        $isAllowed = in_array($user->role, $roles, true) || ($user->role === 'superadmin' && in_array('admin', $roles, true));
+
+        if (! $isAllowed) {
             $targetRoute = match ($user->role) {
-                'admin' => 'admin.dashboard',
+                'admin', 'superadmin' => 'admin.dashboard',
                 'teacher' => 'teacher.dashboard',
                 default => 'parent.dashboard',
             };
@@ -33,3 +35,4 @@ class RoleMiddleware
         return $next($request);
     }
 }
+

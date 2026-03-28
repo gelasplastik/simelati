@@ -20,12 +20,22 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        
+
         User::query()->updateOrCreate([
             'email' => 'admin@sdplusmelati.local',
         ], [
             'name' => 'Admin SIMELATI',
             'password' => Hash::make('password'),
             'role' => 'admin',
+        ]);
+
+        User::query()->updateOrCreate([
+            'email' => 'superadmin@sdplusmelati.local',
+        ], [
+            'name' => 'Superadmin SIMELATI',
+            'password' => Hash::make('password'),
+            'role' => 'superadmin',
         ]);
 
         $classNames = ['1', '2A', '2B', '3A', '3B', '4', '5', '6A', '6B'];
@@ -691,3 +701,7 @@ class DatabaseSeeder extends Seeder
         }
     }
 }
+
+
+
+
